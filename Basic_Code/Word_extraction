@@ -1,0 +1,108 @@
+import json
+import jieba
+import pickle
+cn=0
+list_txt=[]
+list_sku=[]
+cnt_sku=-1
+cnt_txt=-1
+now_sku=-1
+now_txt=-1
+all_article=[]
+all_txt=-1
+new_article=1
+article=0  
+def cal(a,b):
+    w1=list(jieba.cut(a['sku_title']))
+    w2=list(jieba.cut(b['data']))
+    s1=set(w1)
+    s2=set(w2)
+    s_all=s1&s2
+    rate=len(s_all)/(len(s1)+1)
+    return rate
+
+def jieba_len(a):
+    return len(list(jieba.cut(a['data'])))
+
+    
+def init_sku(j,url,headline):
+    tmp={}
+    tmp['url']=url
+    tmp['headline']=headline
+    tmp['sku_title']=j['data']['sku_title']
+    tmp['sku_url']=j['data']['sku_url']
+    tmp['sku_image']=j['data']['sku_image']
+    tmp['content']=[]
+    return tmp
+
+def write_pickle():
+    saveFile=open('list_sku_0.pkl','wb')
+    pickle.dump(list_sku,saveFile)
+    saveFile.close()
+    saveFile=open('all_article_0.pkl','wb')
+    pickle.dump(all_article,saveFile)
+    saveFile.close()
+
+def test(a):
+    print(all_article[a]['url'])
+    for i in list_sku:
+        if i['url']==all_article[a]['url']:
+            print("------------------------------------------------------")
+            print(i['content'])
+            print(i['sku_title'])
+            print("------------------------------------------------------")
+        
+for i in data:
+    a=i.split("\x01")
+    try:
+        article=article+1
+        tp={}
+        tp['url']=''
+        tp['headline']=a[1]
+        tp['content']=a[3]
+        url_all=''
+        if a[2][0]=='h':
+            tp['url']=a[2]
+            url_all=a[2]
+        tp['status']=[]
+        b = json.loads(a[4])
+        for j in b:
+            if j['type']=='sku':
+                tmp=init_sku(j,url_all,a[1])
+                tp['status'].append(j['data'])
+                cnt_sku=cnt_sku+1
+                if now_txt!=cnt_txt:
+                    cnn=cnt_txt
+                    opt=list_txt[cnn]
+                    while cnn>=0:
+                        if jieba_len(list_txt[cnn])>=15:
+                            opt=list_txt[cnn]
+                            break
+                        cnn=cnn-1
+                    if cal(tmp,opt)>=0.6:
+                        tmp['content'].append(opt['data'])
+                        now_sku=cnt_sku
+                        now_txt=cnt_txt
+                list_sku.append(tmp)
+            else:
+                list_txt.append(j)
+                cnt_txt=cnt_txt+1
+                if now_sku!=cnt_sku and jieba_len(list_txt[cnt_txt])>=15:
+                    list_sku[cnt_sku]['content'].append(j['data'])
+                    now_txt=cnt_txt
+                    now_sku=cnt_sku
+        all_article.append(tp)
+        new_txt=cnt_txt
+        new_sku=cnt_sku
+        new_article=1 
+    except:
+        cn=cn+1
+for i in list_sku:
+    cnt=0
+    for j in i['content']:
+        if j==' ':
+            cnt=cnt+1
+    for j in range(cnt):
+        i['content'].remove(' ')
+#write_pickle()
+test(309)
